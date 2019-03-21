@@ -18,3 +18,4 @@ atmos.egg-info
 
 # build directory
 build
+dist
