@@ -13,15 +13,15 @@ reqs = [str(ir.req) for ir in install_reqs]
 
 setup(
     name='atmosp',
-    packages=['atmos'],
-    version='0.2.6',
+    packages=['atmosp'],
+    version='0.2.7',
     description='Atmospheric sciences utility library',
     author='Ting Sun',
     author_email='sunting.05@gmail.com',
     install_requires=reqs,
-    url='https://github.com/sunt05/atmos',
+    url='https://github.com/sunt05/atmosp',
     python_requires='~=3.6',
-    keywords=['atmos', 'atmospheric', 'equations', 'geoscience', 'science'],
+    keywords=['atmosp', 'atmospheric', 'equations', 'geoscience', 'science'],
     classifiers=[
         # 'Programming Language:: Python:: 3:: Only',
         # 'Programming Language :: Python :: 3.6',
