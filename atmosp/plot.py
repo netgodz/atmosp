@@ -14,12 +14,11 @@ from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection
 from matplotlib.projections import register_projection
 from matplotlib.ticker import ScalarFormatter, MultipleLocator
-from atmos import calculate
-from atmos.constants import g0
+from atmosp import calculate
+from atmosp.constants import g0
 from scipy.integrate import odeint
-from atmos.util import closest_val
-from appdirs import user_cache_dir
-import os
+from atmosp.util import closest_val
+from pkg_resources import resource_filename
 
 
 # The sole purpose of this class is to look at the upper, lower, or total
@@ -172,6 +171,9 @@ class SkewTAxes(Axes):
         self.xaxis.set_major_formatter(ScalarFormatter())
         self.set_xlim(*self.default_xlim)
         self.set_ylim(*self.default_ylim)
+        self._mixing_lines_plotted = []
+        self._dry_adiabats_plotted = []
+        self._moist_adiabats_plotted = []
 
     def semilogy(self, p, T, *args, **kwargs):
         r'''Plot data.
@@ -303,7 +305,6 @@ class SkewTAxes(Axes):
         --------
         `matplotlib.Axes.barbs`
         '''
-        #kwargs.setdefault('length', 7)
 
         # Assemble array of x-locations in axes space
         x = np.empty_like(p)
@@ -350,6 +351,7 @@ class SkewTAxes(Axes):
         for artist in self._dry_adiabats:
             artist.remove()
         self._dry_adiabats = []
+        theta = theta  # port workaround, can refactor at any time
 
         # Determine set of starting temps if necessary
         if theta is None:
@@ -366,27 +368,27 @@ class SkewTAxes(Axes):
         linedata = [np.vstack((ti, p)).T for ti in t]
 
         # Add to plot
-        kwargs.setdefault('clip_on', True)
         kwargs.setdefault('colors', '#A65300')
         kwargs.setdefault('linestyles', '-')
         kwargs.setdefault('alpha', 1)
         kwargs.setdefault('linewidth', 0.5)
         kwargs.setdefault('zorder', 1.1)
         collection = LineCollection(linedata, **kwargs)
-        self._dry_adiabats.append(collection)
+        self._dry_adiabats = [collection]
         self.add_collection(collection)
         theta = theta.flatten()
         T_label = calculate('T', p=140, p_units='hPa', theta=theta,
                             T_units='degC', theta_units='degC')
         for i in range(len(theta)):
-            text = self.text(
-                T_label[i], 140, '{:.0f}'.format(theta[i]),
-                fontsize=8, ha='left', va='center', rotation=-60,
-                color='#A65300', bbox={
-                    'facecolor': 'w', 'edgecolor': 'w', 'alpha': 0,
-                    }, zorder=1.2)
-            text.set_clip_on(True)
-            self._dry_adiabats.append(text)
+            t = self.text(T_label[i], 140, '{:.0f}'.format(theta[i]),
+                          fontsize=8, ha='left', va='center', rotation=-60,
+                          color='#A65300', bbox={
+                              'facecolor': 'w', 'edgecolor': 'w', 'alpha': 0,
+                              }, zorder=1.2)
+            t.set_clip_on(True)
+            self._dry_adiabats.append(t)
+        # keep track of plotting
+        self._dry_adiabats_plotted = True
 
     def plot_moist_adiabats(self, p=None, thetaes=None, **kwargs):
         r'''Plot moist adiabats.
@@ -419,6 +421,7 @@ class SkewTAxes(Axes):
         for artist in self._moist_adiabats:
             artist.remove()
         self._moist_adiabats = []
+        thetaes = thetaes  # port workaround, can refactor at any time
 
         def dT_dp(y, p0):
             return calculate('Gammam', T=y, p=p0, RH=100., p_units='hPa',
@@ -426,42 +429,32 @@ class SkewTAxes(Axes):
                 g0*calculate('rho', T=y, p=p0, p_units='hPa', T_units='degC',
                              RH=100.))*100.
 
-        if thetaes is None:
-            xmin, xmax = self.get_xlim()
-            thetaes = np.concatenate((np.arange(xmin, 0, 5),
-                                      np.arange(0, xmax + 51, 5)))
-        # Get pressure levels based on ylims if necessary
-        if p is None:
-            p = np.linspace(self.get_ylim()[0], self.get_ylim()[1])
+        if thetaes is None and p is None:
+            if (self.get_xlim() == self.default_xlim and
+                    self.get_ylim() == self.default_ylim):
+                data = np.load(resource_filename(
+                    __name__, 'data/default_moist_adiabat_data.npz'))
+                p = data['p']
+                thetaes = data['t0']
+                t = data['t']
+        else:
+            # Determine set of starting temps if necessary
+            if thetaes is None:
+                xmin, xmax = self.get_xlim()
+                thetaes = np.concatenate((np.arange(xmin, 0, 5),
+                                     np.arange(0, xmax + 51, 5)))
+            # Get pressure levels based on ylims if necessary
+            if p is None:
+                p = np.linspace(*self.get_ylim())
+            thetaes_base = odeint(dT_dp, thetaes, np.array([1e3, p[0]],
+                                                 dtype=np.float64))[-1, :]
 
-        cache_dir = user_cache_dir('atmos')
-        if not os.path.isdir(cache_dir):
-            os.mkdir(cache_dir)
-        cache_filename = os.path.join(cache_dir, 'moist_adiabat_data.npz')
-        request_str = 'p:{},\nthetaes:{}'.format(
-            np.array_str(p), np.array_str(thetaes))
-        t = None
-        cached_data = None
-        if os.path.isfile(cache_filename):
-            cached_data = np.load(cache_filename)
-            if request_str in cached_data.keys():
-                t = cached_data[request_str]
-        if t is None:
-            # did not find cached data
             # Assemble into data for plotting
-            thetaes_base = odeint(
-                dT_dp, thetaes, np.array([1e3, p[0]], dtype=np.float64))[-1, :]
             result = odeint(dT_dp, thetaes_base, p)
             t = result.T
-            data_to_cache = {}
-            if cached_data is not None:
-                data_to_cache.update(cached_data)
-            data_to_cache[request_str] = t
-            np.savez(cache_filename, **data_to_cache)
         linedata = [np.vstack((ti, p)).T for ti in t]
 
         # Add to plot
-        kwargs.setdefault('clip_on', True)
         kwargs.setdefault('colors', '#166916')
         kwargs.setdefault('linestyles', '-')
         kwargs.setdefault('alpha', 1)
@@ -473,15 +466,14 @@ class SkewTAxes(Axes):
         label_index = closest_val(240., p)
         T_label = t[:, label_index].flatten()
         for i in range(len(thetaes)):
-            text = self.text(
-                T_label[i], p[label_index],
-                '{:.0f}'.format(thetaes[i]),
-                fontsize=8, ha='left', va='center', rotation=-65,
-                color='#166916', bbox={
-                    'facecolor': 'w', 'edgecolor': 'w', 'alpha': 0,
-                    }, zorder=1.2)
-            text.set_clip_on(True)
-            self._moist_adiabats.append(text)
+            t = self.text(T_label[i], p[label_index],
+                          '{:.0f}'.format(thetaes[i]),
+                          fontsize=8, ha='left', va='center', rotation=-65,
+                          color='#166916', bbox={
+                              'facecolor': 'w', 'edgecolor': 'w', 'alpha': 0,
+                              }, zorder=1.2)
+            t.set_clip_on(True)
+            self._moist_adiabats.append(t)
 
     def plot_mixing_lines(self, p=None, rv=None, **kwargs):
         r'''Plot lines of constant mixing ratio.
@@ -535,7 +527,6 @@ class SkewTAxes(Axes):
         linedata = [np.vstack((t, p)).T for t in Td]
 
         # Add to plot
-        kwargs.setdefault('clip_on', True)
         kwargs.setdefault('colors', '#166916')
         kwargs.setdefault('linestyles', '--')
         kwargs.setdefault('alpha', 1)
@@ -569,10 +560,7 @@ if __name__ == '__main__':
 #    ax = fig.add_subplot(1, 1, 1, projection='skewT')
     fig, ax = plt.subplots(1, 1, figsize=(6, 6),
                            subplot_kw={'projection': 'skewT'})
-#    ax = plt.subplot(projection='skewT')
     ax.plot(np.linspace(1e3, 100, 100), np.linspace(0, -50, 100))
-    ax.plot_barbs(np.linspace(1e3, 100, 10), np.linspace(50, -50, 10),
-             np.linspace(-50, 50, 10), xloc=0.95)
     plt.tight_layout()
     plt.show()
 

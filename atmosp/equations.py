@@ -35,10 +35,12 @@ equations.py: Fluid dynamics equations for atmospheric sciences.
 # can't use numexpr with unicode_literals because of bugs in older versions
 # of numexpr
 from __future__ import division, absolute_import
+import numpy as np
 import numexpr as ne
-from atmos.constants import g0, Omega, Rd, Rv, Cpd, Lv0, Cl, pi
-from atmos.decorators import assumes, overridden_by_assumptions
-from atmos.decorators import equation_docstring
+from numpy import pi
+from atmosp.constants import g0, Omega, Rd, Rv, Cpd, Lv0, Cl
+from atmosp.decorators import assumes, overridden_by_assumptions
+from atmosp.decorators import equation_docstring
 
 ref = {'AMS Glossary Gammam': '''
 American Meteorological Society Glossary of Meteorology
@@ -108,11 +110,11 @@ quantities = {
     },
     'lat': {
         'name': 'latitude',
-        'units': 'degrees_north',
+        'units': 'degrees',
     },
     'lon': {
         'name': 'longitude',
-        'units': 'degrees_east',
+        'units': 'degrees',
     },
     'MSE': {
         'name': 'moist static energy',
@@ -164,7 +166,7 @@ quantities = {
     },
     'RB': {
         'name': 'bulk Richardson number',
-        'units': '1',
+        'units': 'dimensionless',
     },
     'RH': {
         'name': 'relative humidity with respect to liquid water',
@@ -887,7 +889,7 @@ def Tlcl_from_T_Td(T, Td):
          notes='Uses Bolton(1980) equation 21.')
 @assumes('bolton')
 def Tlcl_from_T_e(T, e):
-    return ne.evaluate('2840./(3.5*log(T)-log(e*0.01)-4.805) + 55.')
+    return ne.evaluate('2840./(3.5*log(T)-log(e)-4.805) + 55.')
 
 
 @autodoc(equation=r'T = \theta (\frac{10^5}{p})^{-\frac{R_d}{C_{pd}}}')
