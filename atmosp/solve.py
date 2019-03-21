@@ -5,7 +5,7 @@ solve.py: Utilities that use equations to solve for quantities, given other
 """
 from __future__ import division, absolute_import, unicode_literals
 import inspect
-from atmos import equations
+from atmosp import equations
 import numpy as np
 from six import add_metaclass, string_types
 from textwrap import wrap
@@ -535,7 +535,7 @@ Same calculation, but also returning a list of functions used:
 >>> solver = FluidSolver(Tv=273., rho=1.27, debug=True)
 >>> p, funcs = solver.calculate('p')
 >>> funcs
-(<function atmos.equations.p_from_rho_Tv_ideal_gas>,)
+(<function atmosp.equations.p_from_rho_Tv_ideal_gas>,)
 
 Same calculation with temperature instead, ignoring virtual temperature
 correction:
@@ -724,7 +724,7 @@ Same calculation, but also returning a list of functions used:
 >>> solver = FluidSolver(Tv=273., rho=1.27, debug=True)
 >>> p, funcs = solver.calculate('p')
 >>> funcs
-(<function atmos.equations.p_from_rho_Tv_ideal_gas>,)
+(<function atmosp.equations.p_from_rho_Tv_ideal_gas>,)
 
 Same calculation with temperature instead, ignoring virtual temperature
 correction:
@@ -816,7 +816,7 @@ Same calculation, but also returning a list of functions used:
 
 >>> p, funcs = calculate('p', Tv=273., rho=1.27, debug=True)
 >>> funcs
-(<function atmos.equations.p_from_rho_Tv_ideal_gas>,)
+(<function atmosp.equations.p_from_rho_Tv_ideal_gas>,)
 
 Same calculation with temperature instead, ignoring virtual temperature
 correction:

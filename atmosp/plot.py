@@ -14,10 +14,10 @@ from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection
 from matplotlib.projections import register_projection
 from matplotlib.ticker import ScalarFormatter, MultipleLocator
-from atmos import calculate
-from atmos.constants import g0
+from atmosp import calculate
+from atmosp.constants import g0
 from scipy.integrate import odeint
-from atmos.util import closest_val
+from atmosp.util import closest_val
 from pkg_resources import resource_filename
 
 

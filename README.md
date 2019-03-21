@@ -1,8 +1,19 @@
-atmos
-=====
+atmosp
+======
 
-Note
-----
+- [atmosp](#atmosp)
+    - [Note](#note)
+  - [An atmospheric sciences utility library](#an-atmospheric-sciences-utility-library)
+    - [Features](#features)
+    - [Dependencies](#dependencies)
+    - [Installation](#installation)
+    - [Development version](#development-version)
+    - [Examples](#examples)
+    - [License](#license)
+
+
+### Note
+
 
 This is a fork version of [atmos-python/atmos]([atmos_gh](https://github.com/atmos-python/atmos)). Modifications
 are made here to enable its installation via `pip install atmos`
@@ -27,8 +38,6 @@ level should stay backwards-compatible, but sub-modules are subject to
 change. In particular, features in the util module are likely to be
 changed or removed entirely.
 
-::: {.contents}
-:::
 
 ### Features
 

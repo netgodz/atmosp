@@ -6,15 +6,15 @@ from __future__ import division, unicode_literals
 import unittest
 import nose
 import numpy as np
-from atmos import equations
-from atmos import util
-from atmos import decorators
+from atmosp import equations
+from atmosp import util
+from atmosp import decorators
 from nose.tools import raises
-from atmos.constants import Rd
-from atmos.solve import BaseSolver, FluidSolver, calculate, \
+from atmosp.constants import Rd
+from atmosp.solve import BaseSolver, FluidSolver, calculate, \
     _get_module_methods, _get_calculatable_methods_dict,\
     _get_shortest_solution
-from atmos.util import quantity_string, assumption_list_string, \
+from atmosp.util import quantity_string, assumption_list_string, \
     quantity_spec_string, doc_paragraph, \
     strings_to_list_string
 try:

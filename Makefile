@@ -21,7 +21,7 @@ else
 
 endif
 
-src_dir = src
+src_dir = atmosp
 docs_dir = docs
 
 
@@ -29,7 +29,7 @@ PYTHON := $(if $(PYTHON_exe),$(PYTHON_exe),python)
 # All the files which include modules used by other modules (these therefore
 # need to be compiled first)
 
-MODULE = supy
+MODULE = atmosp
 
 # default make options
 main:
@@ -40,6 +40,11 @@ clean:
 	python setup.py clean
 	rm -rf dist/*
 
+# run test
+test:
+	$(MAKE) clean
+	$(MAKE) main
+	python setup.py test
 
 # make docs and open index
 docs:
