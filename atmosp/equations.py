@@ -38,9 +38,9 @@ from __future__ import division, absolute_import
 import numpy as np
 import numexpr as ne
 from numpy import pi
-from atmos.constants import g0, Omega, Rd, Rv, Cpd, Lv0, Cl
-from atmos.decorators import assumes, overridden_by_assumptions
-from atmos.decorators import equation_docstring
+from atmosp.constants import g0, Omega, Rd, Rv, Cpd, Lv0, Cl
+from atmosp.decorators import assumes, overridden_by_assumptions
+from atmosp.decorators import equation_docstring
 
 ref = {'AMS Glossary Gammam': '''
 American Meteorological Society Glossary of Meteorology
@@ -230,11 +230,11 @@ quantities = {
         'units': 'K',
     },
     'thetae': {
-        'name': 'equivalent temperature',
+        'name': 'equivalent potential temperature',
         'units': 'K',
     },
     'thetaes': {
-        'name': 'saturation equivalent temperature',
+        'name': 'saturation equivalent potential temperature',
         'units': 'K',
     },
     'u': {

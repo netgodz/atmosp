@@ -1,13 +1,29 @@
 language: python
 python:
-  - "2.6"
   - "2.7"
   - "3.2"
-  - "3.3"
-  - "3.4"
 #  - "nightly"
 
+sudo: true
+
+addons:
+  apt:
+    packages:
+      - python-scipy
+      - libudunits2-0
+      - libudunits2-dev
+      - udunits-bin
+      - netcdf4-python
+
+virtualenv:
+  system_site_packages: true
+
 # command to install dependencies
+
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y python-scipy, libudunits2-0, libudunits2-dev, udunits-bin, netcdf4-python
+
 install:
   - "pip install ."
   - "pip install python-coveralls"
@@ -16,6 +32,8 @@ install:
   - "pip install -r requirements.txt"
 
 # command to run tests
-script: nosetests --with-coverage
+script:
+  - cd $HOME/build/atmos-python/atmos/atmos/tests
+  - python run_tests.py
 after_success:  
   - coveralls

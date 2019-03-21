@@ -14,7 +14,8 @@ _*_float64.pyx
 .spyderworkspace
 
 # Local install egg
-atmos.egg-info
+*.egg-info
 
 # build directory
 build
+dist

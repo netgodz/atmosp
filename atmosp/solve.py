@@ -5,23 +5,19 @@ solve.py: Utilities that use equations to solve for quantities, given other
 """
 from __future__ import division, absolute_import, unicode_literals
 import inspect
-from atmos import equations
+from atmosp import equations
 import numpy as np
 from six import add_metaclass, string_types
 from textwrap import wrap
 import re
-import pint
+import cfunits
 try:
+    # Python >= 2.7
     from inspect import getfullargspec
 except ImportError:
+    # Python == 2.6
     from inspect import getargspec as getfullargspec
 
-# initialize a unit registry for converting units
-_ureg = pint.UnitRegistry()
-_ureg.define('fraction = [fraction] = frac = ratio')
-_ureg.define('percent = 0.01*fraction = %')
-# regex program for identifying unit-specifying keyword arguments for
-# solvers
 _unit_kwarg_prog = re.compile(r'^(.+)_unit$|^(.+)_units$')
 
 
@@ -312,7 +308,11 @@ lists for subclasses of BaseSolver.
                 dct['__doc__'] = _fill_doc(
                     dct['__doc__'], dct['_equation_module'],
                     dct['default_assumptions'])
-
+            dct['_ref_units'] = {}
+            for quantity in dct['_equation_module'].quantities.keys():
+                dct['_ref_units'][quantity] = \
+                    cfunits.Units(dct['_equation_module'].quantities[
+                        quantity]['units'])
             assumptions = set([])
             for f in inspect.getmembers(equations):
                 try:
@@ -394,13 +394,6 @@ units of "fraction" or "percent".
             self._debug = kwargs.pop('debug')
         else:
             self._debug = False
-        # get reference units from equation module
-        self._ref_units = {}
-        # this could be made a class variable for optimization
-        for quantity in self._equation_module.quantities.keys():
-            self._ref_units[quantity] = \
-                _ureg(self._equation_module.quantities[
-                      quantity]['units'])
         # make sure add and remove assumptions are tuples, not strings
         if ('add_assumptions' in kwargs.keys() and
                 isinstance(kwargs['add_assumptions'], string_types)):
@@ -459,8 +452,7 @@ units of "fraction" or "percent".
                 remove_kwargs.append(kwarg)
                 if not isinstance(unit_str, string_types):
                     raise TypeError('units must be strings')
-                units = _ureg(unit_str)
-                self.units[var] = units
+                self.units[var] = cfunits.Units(unit_str)
         for kwarg in remove_kwargs:
             kwargs.pop(kwarg)
         # make sure the remaining variables are quantities
@@ -471,9 +463,8 @@ units of "fraction" or "percent".
                     self.units[kwarg] != self._ref_units[kwarg]):
                 # special unit defined
                 # convert to reference unit for calculations
-                kwargs[kwarg] = _ureg.Quantity(kwargs[kwarg],
-                                               self.units[kwarg]).to(
-                    self._ref_units[kwarg]).magnitude
+                kwargs[kwarg] = cfunits.Units.conform(
+                    kwargs[kwarg], self.units[kwarg], self._ref_units[kwarg])
         # also store the quantities
         self.vars = kwargs
 
@@ -535,7 +526,7 @@ Same calculation, but also returning a list of functions used:
 >>> solver = FluidSolver(Tv=273., rho=1.27, debug=True)
 >>> p, funcs = solver.calculate('p')
 >>> funcs
-(<function atmos.equations.p_from_rho_Tv_ideal_gas>,)
+(<function atmosp.equations.p_from_rho_Tv_ideal_gas>,)
 
 Same calculation with temperature instead, ignoring virtual temperature
 correction:
@@ -577,13 +568,12 @@ correction:
             # Add it to our dictionary of quantities for successive functions
             self.vars[extra_values[i]] = value
         return_list = []
-        # do corrections for non-standard units
         for arg in args:
+            # do corrections for non-standard units
             if arg in self.units and self.units[arg] != self._ref_units[arg]:
-                return_list.append((self._ref_units[arg] * self.vars[arg]).to(
-                    self.units[arg]).magnitude)
-            else:
-                return_list.append(self.vars[arg])
+                self.vars[arg] = cfunits.Units.conform(
+                    self.vars[arg], self._ref_units[arg], self.units[arg])
+            return_list.append(self.vars[arg])
         if self._debug:
             # We should return a list of funcs as the last item returned
             if len(return_list) == 1:
@@ -724,7 +714,7 @@ Same calculation, but also returning a list of functions used:
 >>> solver = FluidSolver(Tv=273., rho=1.27, debug=True)
 >>> p, funcs = solver.calculate('p')
 >>> funcs
-(<function atmos.equations.p_from_rho_Tv_ideal_gas>,)
+(<function atmosp.equations.p_from_rho_Tv_ideal_gas>,)
 
 Same calculation with temperature instead, ignoring virtual temperature
 correction:
@@ -816,7 +806,7 @@ Same calculation, but also returning a list of functions used:
 
 >>> p, funcs = calculate('p', Tv=273., rho=1.27, debug=True)
 >>> funcs
-(<function atmos.equations.p_from_rho_Tv_ideal_gas>,)
+(<function atmosp.equations.p_from_rho_Tv_ideal_gas>,)
 
 Same calculation with temperature instead, ignoring virtual temperature
 correction:
